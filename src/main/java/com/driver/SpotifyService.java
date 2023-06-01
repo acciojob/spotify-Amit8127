@@ -38,7 +38,6 @@ public class SpotifyService {
         //Create an album with given title and artist
         Artist newArtist = null;
         List<Artist> artists = spotifyRepository.getAllArtists();
-        List<Album> albums = spotifyRepository.getAllAlbums();
         boolean isArtistPresent = false;
         for(Artist artist : artists) {
             if(artist.getName().equals(artistName)) {
@@ -50,17 +49,8 @@ public class SpotifyService {
         if(!isArtistPresent) {
             newArtist = spotifyRepository.createArtist(artistName);
         }
-        for(Album album : albums) {
-            if(album.getTitle().equals(title)) {
-                return album;
-            }
-        }
         Album album = spotifyRepository.createAlbum(title, artistName);
         List<Album> newList = new ArrayList<>();
-        boolean isArtistPresentAsKey = spotifyRepository.isArtistPresentAsKey(newArtist);
-        if(isArtistPresentAsKey) {
-            newList = spotifyRepository.getListOfAlbumsOfArtist(newArtist);
-        }
         newList.add(album);
         spotifyRepository.addArtistAndHisAlbumsList(newArtist, newList);
         return album;
@@ -80,36 +70,21 @@ public class SpotifyService {
             }
         }
         if(!isAlbumPresent) {
-            newAlbum = spotifyRepository.createAlbum(title, albumName);
             throw new Exception("Album does not exist");
+        } else {
+            Song song = spotifyRepository.createSong(title, albumName, length);
+            List<Song> newSongsList = new ArrayList<>();
+            boolean isAlbumPresentAsKey = spotifyRepository.isAlbumPresentAsKey(newAlbum);
+            if (isAlbumPresentAsKey) {
+                newSongsList = spotifyRepository.getListOfSongsOfAlbum(newAlbum);
+            }
+            newSongsList.add(song);
+            spotifyRepository.addAlbumAndHisSongsList(newAlbum, newSongsList);
+            return song;
         }
-        Song song = spotifyRepository.createSong(title, albumName, length);
-        List<Song> newSongsList = new ArrayList<>();
-        boolean isAlbumPresentAsKey = spotifyRepository.isAlbumPresentAsKey(newAlbum);
-        if(isAlbumPresentAsKey) {
-            newSongsList = spotifyRepository.getListOfSongsOfAlbum(newAlbum);
-        }
-        newSongsList.add(song);
-        spotifyRepository.addAlbumAndHisSongsList(newAlbum, newSongsList);
-        return song;
     }
 
     public Playlist createPlaylistOnLength(String mobile, String title, int length) throws Exception {
-        List<Playlist> playlists = spotifyRepository.getAllPlayLists();
-        for(Playlist playlist : playlists) {
-            if(playlist.getTitle().equals(title)) {
-                return playlist;
-            }
-        }
-        Playlist newPlayList = spotifyRepository.createPlaylistOnLength(mobile, title, length);
-        List<Song> newSongsList = new ArrayList<>();
-        List<Song> songs = spotifyRepository.getAllSongs();
-        for(Song song : songs) {
-            if(song.getLength() == length) {
-                newSongsList.add(song);
-            }
-        }
-        spotifyRepository.addPlayListAndHisSongsList(newPlayList, newSongsList);
         List<User> users = spotifyRepository.getAllUser();
         User newUser = null;
         boolean isUserPresent = false;
@@ -122,42 +97,33 @@ public class SpotifyService {
         }
         if (!isUserPresent){
             throw new Exception("User does not exist");
-        }
-        List<User> usersList = new ArrayList<>();
-        boolean isUserListPresent = spotifyRepository.isUserListPresent(newPlayList);
-        if(isUserListPresent) {
-            usersList = spotifyRepository.getListOfUserOfPlaylist(newPlayList);
-        }
-        usersList.add(newUser);
-        spotifyRepository.addPlaylistAndHisUser(newPlayList, usersList);
-        spotifyRepository.addUserAndHisPlaylist(newUser, newPlayList);
+        } else {
+            Playlist newPlayList = spotifyRepository.createPlaylistOnLength(mobile, title, length);
+            List<Song> newSongsList = new ArrayList<>();
+            List<Song> songs = spotifyRepository.getAllSongs();
+            for (Song song : songs) {
+                if (song.getLength() == length) {
+                    newSongsList.add(song);
+                }
+            }
+            List<User> usersList = new ArrayList<>();
+            spotifyRepository.addPlayListAndHisSongsList(newPlayList, newSongsList);
+            usersList.add(newUser);
+            spotifyRepository.addPlaylistAndHisUser(newPlayList, usersList);
+            spotifyRepository.addUserAndHisPlaylist(newUser, newPlayList);
 
-        List<Playlist> userPlaylist = new ArrayList<>();
-        boolean isUserPlaylistPresent = spotifyRepository.isUserPlaylistPresent(newUser);
-        if(isUserPlaylistPresent) {
-            userPlaylist = spotifyRepository.getListOfPlaylistsOfUser(newUser);
+            List<Playlist> userPlaylist = new ArrayList<>();
+            boolean isUserPlaylistPresent = spotifyRepository.isUserPlaylistPresent(newUser);
+            if (isUserPlaylistPresent) {
+                userPlaylist = spotifyRepository.getListOfPlaylistsOfUser(newUser);
+            }
+            userPlaylist.add(newPlayList);
+            spotifyRepository.addUserAndHisPlaylists(newUser, userPlaylist);
+            return newPlayList;
         }
-        userPlaylist.add(newPlayList);
-        spotifyRepository.addUserAndHisPlaylists(newUser, userPlaylist);
-        return newPlayList;
     }
 
     public Playlist createPlaylistOnName(String mobile, String title, List<String> songTitles) throws Exception {
-        List<Playlist> playlists = spotifyRepository.getAllPlayLists();
-        for(Playlist playlist : playlists) {
-            if(playlist.getTitle().equals(title)) {
-                return playlist;
-            }
-        }
-        Playlist newPlayList = spotifyRepository.createPlaylistOnName(mobile, title, songTitles);
-        List<Song> newSongsList = new ArrayList<>();
-        List<Song> songs = spotifyRepository.getAllSongs();
-        for(Song song : songs) {
-            if(songTitles.contains(song.getTitle())) {
-                newSongsList.add(song);
-            }
-        }
-        spotifyRepository.addPlayListAndHisSongsList(newPlayList, newSongsList);
         List<User> users = spotifyRepository.getAllUser();
         User newUser = null;
         boolean isUserPresent = false;
@@ -170,24 +136,30 @@ public class SpotifyService {
         }
         if (!isUserPresent){
             throw new Exception("User does not exist");
-        }
-        List<User> usersList = new ArrayList<>();
-        boolean isUserListPresent = spotifyRepository.isUserListPresent(newPlayList);
-        if(isUserListPresent) {
-            usersList = spotifyRepository.getListOfUserOfPlaylist(newPlayList);
-        }
-        usersList.add(newUser);
-        spotifyRepository.addPlaylistAndHisUser(newPlayList, usersList);
-        spotifyRepository.addUserAndHisPlaylist(newUser, newPlayList);
+        } else {
+            Playlist newPlayList = spotifyRepository.createPlaylistOnName(mobile, title, songTitles);
+            List<Song> newSongsList = new ArrayList<>();
+            List<Song> songs = spotifyRepository.getAllSongs();
+            for(Song song : songs) {
+                if(songTitles.contains(song.getTitle())) {
+                    newSongsList.add(song);
+                }
+            }
+            spotifyRepository.addPlayListAndHisSongsList(newPlayList, newSongsList);
+            List<User> usersList = new ArrayList<>();
+            usersList.add(newUser);
+            spotifyRepository.addPlaylistAndHisUser(newPlayList, usersList);
+            spotifyRepository.addUserAndHisPlaylist(newUser, newPlayList);
 
-        List<Playlist> userPlaylist = new ArrayList<>();
-        boolean isUserPlaylistPresent = spotifyRepository.isUserPlaylistPresent(newUser);
-        if(isUserPlaylistPresent) {
-            userPlaylist = spotifyRepository.getListOfPlaylistsOfUser(newUser);
+            List<Playlist> userPlaylist = new ArrayList<>();
+            boolean isUserPlaylistPresent = spotifyRepository.isUserPlaylistPresent(newUser);
+            if (isUserPlaylistPresent) {
+                userPlaylist = spotifyRepository.getListOfPlaylistsOfUser(newUser);
+            }
+            userPlaylist.add(newPlayList);
+            spotifyRepository.addUserAndHisPlaylists(newUser, userPlaylist);
+            return newPlayList;
         }
-        userPlaylist.add(newPlayList);
-        spotifyRepository.addUserAndHisPlaylists(newUser, userPlaylist);
-        return newPlayList;
     }
 
     public Playlist findPlaylist(String mobile, String playlistTitle) throws Exception {
